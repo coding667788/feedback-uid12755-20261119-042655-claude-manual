@@ -1,0 +1,246 @@
+{
+  "schema_version": "1.0",
+  "note": "全部为合成数据，离线使用；不包含任何真实凭据。凭据 id 是撤销与换绑的唯一作用对象。",
+  "cases": [
+    {
+      "case_id": "C01-basic-feasible-multi-service",
+      "description": "基础可行案例：两个服务共用部分凭据，暴露沿可继承衍生边传播到子代，须先换绑再在截止步前撤销全部受污染代数。",
+      "deadline_step": 4,
+      "credentials": [
+        {"credential_id": "k-root", "display_name": "root-key", "tenant": "tenant-alpha", "role": "admin", "custody_domain": "DOM-1", "generation": "g1", "risk_weight": 10},
+        {"credential_id": "k-child", "display_name": "child-key", "tenant": "tenant-alpha", "role": "admin", "custody_domain": "DOM-1", "generation": "g2", "risk_weight": 6},
+        {"credential_id": "k-other", "display_name": "other-key", "tenant": "tenant-alpha", "role": "admin", "custody_domain": "DOM-2", "generation": "g1", "risk_weight": 4},
+        {"credential_id": "k-billing", "display_name": "billing-key", "tenant": "tenant-alpha", "role": "billing", "custody_domain": "DOM-3", "generation": "g1", "risk_weight": 5}
+      ],
+      "derivation_edges": [
+        {"parent_id": "k-root", "child_id": "k-child", "inherit_risk": true},
+        {"parent_id": "k-child", "child_id": "k-billing", "inherit_risk": false}
+      ],
+      "exposure_records": [
+        {"credential_id": "k-root", "evidence": "synthetic log: root-key pasted into issue tracker"}
+      ],
+      "replacements": [
+        {"replacement_id": "r-admin-a", "display_name": "new-admin-a", "tenant": "tenant-alpha", "role": "admin", "custody_domain": "DOM-9", "available_from_step": 1, "available_to_step": 6},
+        {"replacement_id": "r-admin-b", "display_name": "new-admin-b", "tenant": "tenant-alpha", "role": "admin", "custody_domain": "DOM-8", "available_from_step": 1, "available_to_step": 6},
+        {"replacement_id": "r-billing", "display_name": "new-billing", "tenant": "tenant-alpha", "role": "billing", "custody_domain": "DOM-7", "available_from_step": 1, "available_to_step": 6}
+      ],
+      "services": [
+        {"service_id": "svc-a", "tenant": "tenant-alpha",
+         "role_requirements": [{"role": "admin", "min_active": 2, "sensitive": true}, {"role": "billing", "min_active": 1, "sensitive": false}],
+         "initial_bindings": {"admin": ["k-root", "k-other"], "billing": ["k-billing"]}},
+        {"service_id": "svc-b", "tenant": "tenant-alpha",
+         "role_requirements": [{"role": "admin", "min_active": 1, "sensitive": true}],
+         "initial_bindings": {"admin": ["k-child"]}}
+      ],
+      "candidate_actions": [
+        {"action_id": "A01", "kind": "replace", "risk_cost": 1, "service_id": "svc-a", "window_from_step": 1, "window_to_step": 3,
+         "migrations": [{"role": "admin", "from_credential_id": "k-root", "to_credential_id": "r-admin-a"}]},
+        {"action_id": "A02", "kind": "replace", "risk_cost": 1, "service_id": "svc-b", "window_from_step": 1, "window_to_step": 3,
+         "migrations": [{"role": "admin", "from_credential_id": "k-child", "to_credential_id": "r-admin-b"}]},
+        {"action_id": "A03", "kind": "revoke", "risk_cost": 10, "target_credential_id": "k-root"},
+        {"action_id": "A04", "kind": "revoke", "risk_cost": 6, "target_credential_id": "k-child"},
+        {"action_id": "A05", "kind": "replace", "risk_cost": 2, "service_id": "svc-a", "window_from_step": 1, "window_to_step": 2,
+         "migrations": [{"role": "billing", "from_credential_id": "k-billing", "to_credential_id": "r-billing"}]}
+      ]
+    },
+    {
+      "case_id": "C02-revoke-alone-ok-combo-fails",
+      "description": "无解案例：两项撤销各自单独可行（剩余凭据仍满足最低数），但组合后两服务同时失去唯一活跃管理员；无替代凭据可用。",
+      "deadline_step": 3,
+      "credentials": [
+        {"credential_id": "k-shared", "display_name": "shared-admin", "tenant": "tenant-beta", "role": "admin", "custody_domain": "DOM-1", "generation": "g1", "risk_weight": 10},
+        {"credential_id": "k-s1", "display_name": "s1-admin", "tenant": "tenant-beta", "role": "admin", "custody_domain": "DOM-2", "generation": "g1", "risk_weight": 6},
+        {"credential_id": "k-s2", "display_name": "s2-admin", "tenant": "tenant-beta", "role": "admin", "custody_domain": "DOM-3", "generation": "g1", "risk_weight": 6}
+      ],
+      "derivation_edges": [
+        {"parent_id": "k-shared", "child_id": "k-s1", "inherit_risk": true},
+        {"parent_id": "k-shared", "child_id": "k-s2", "inherit_risk": true}
+      ],
+      "exposure_records": [
+        {"credential_id": "k-shared", "evidence": "synthetic: shared admin token found in public gist"}
+      ],
+      "replacements": [],
+      "services": [
+        {"service_id": "svc-1", "tenant": "tenant-beta",
+         "role_requirements": [{"role": "admin", "min_active": 1, "sensitive": true}],
+         "initial_bindings": {"admin": ["k-shared", "k-s1"]}},
+        {"service_id": "svc-2", "tenant": "tenant-beta",
+         "role_requirements": [{"role": "admin", "min_active": 1, "sensitive": true}],
+         "initial_bindings": {"admin": ["k-shared", "k-s2"]}}
+      ],
+      "candidate_actions": [
+        {"action_id": "B01", "kind": "revoke", "risk_cost": 5, "target_credential_id": "k-shared"},
+        {"action_id": "B02", "kind": "revoke", "risk_cost": 3, "target_credential_id": "k-s1"},
+        {"action_id": "B03", "kind": "revoke", "risk_cost": 3, "target_credential_id": "k-s2"}
+      ]
+    },
+    {
+      "case_id": "C03-tainted-derived-replacement-forbidden",
+      "description": "已暴露的衍生凭据不可作为替代：迁移到受污染真实代数被 E2008 阻断，干净替代凭据路径可行。",
+      "deadline_step": 3,
+      "credentials": [
+        {"credential_id": "k-p", "display_name": "parent-key", "tenant": "tenant-gamma", "role": "admin", "custody_domain": "DOM-1", "generation": "g1", "risk_weight": 10},
+        {"credential_id": "k-derived", "display_name": "derived-key", "tenant": "tenant-gamma", "role": "admin", "custody_domain": "DOM-4", "generation": "g2", "risk_weight": 7},
+        {"credential_id": "k-standby", "display_name": "standby-key", "tenant": "tenant-gamma", "role": "admin", "custody_domain": "DOM-2", "generation": "g1", "risk_weight": 2}
+      ],
+      "derivation_edges": [
+        {"parent_id": "k-p", "child_id": "k-derived", "inherit_risk": true}
+      ],
+      "exposure_records": [
+        {"credential_id": "k-p", "evidence": "synthetic: parent key in leaked backup"}
+      ],
+      "replacements": [
+        {"replacement_id": "r-clean", "display_name": "clean-replacement", "tenant": "tenant-gamma", "role": "admin", "custody_domain": "DOM-9", "available_from_step": 1, "available_to_step": 5}
+      ],
+      "services": [
+        {"service_id": "svc-g", "tenant": "tenant-gamma",
+         "role_requirements": [{"role": "admin", "min_active": 2, "sensitive": true}],
+         "initial_bindings": {"admin": ["k-p", "k-standby"]}}
+      ],
+      "candidate_actions": [
+        {"action_id": "C01", "kind": "replace", "risk_cost": 1, "service_id": "svc-g", "window_from_step": 1, "window_to_step": 3,
+         "migrations": [{"role": "admin", "from_credential_id": "k-p", "to_credential_id": "k-derived"}]},
+        {"action_id": "C02", "kind": "replace", "risk_cost": 2, "service_id": "svc-g", "window_from_step": 1, "window_to_step": 3,
+         "migrations": [{"role": "admin", "from_credential_id": "k-p", "to_credential_id": "r-clean"}]},
+        {"action_id": "C03", "kind": "revoke", "risk_cost": 10, "target_credential_id": "k-p"},
+        {"action_id": "C04", "kind": "revoke", "risk_cost": 7, "target_credential_id": "k-derived"}
+      ]
+    },
+    {
+      "case_id": "C04-non-greedy-cross-service-rebind",
+      "description": "非贪心跨服务换绑：污染凭据被两个服务共用。贪心第1步选廉价动作 D03 会耗尽 svc-y 的唯一迁移窗口（D01 仅第1步可执行）而走入死锁；最优解必须先在 svc-y 做较贵的腾出动作。",
+      "deadline_step": 5,
+      "credentials": [
+        {"credential_id": "k-taint", "display_name": "tainted-key", "tenant": "tenant-delta", "role": "admin", "custody_domain": "DOM-1", "generation": "g1", "risk_weight": 10},
+        {"credential_id": "k-x2", "display_name": "x-second-key", "tenant": "tenant-delta", "role": "admin", "custody_domain": "DOM-3", "generation": "g1", "risk_weight": 1},
+        {"credential_id": "k-y2", "display_name": "y-second-key", "tenant": "tenant-delta", "role": "admin", "custody_domain": "DOM-4", "generation": "g1", "risk_weight": 1}
+      ],
+      "derivation_edges": [],
+      "exposure_records": [
+        {"credential_id": "k-taint", "evidence": "synthetic: credential in rotated-but-leaked config"}
+      ],
+      "replacements": [
+        {"replacement_id": "r-x", "display_name": "replacement-x", "tenant": "tenant-delta", "role": "admin", "custody_domain": "DOM-9", "available_from_step": 1, "available_to_step": 5},
+        {"replacement_id": "r-y", "display_name": "replacement-y", "tenant": "tenant-delta", "role": "admin", "custody_domain": "DOM-8", "available_from_step": 1, "available_to_step": 5}
+      ],
+      "services": [
+        {"service_id": "svc-x", "tenant": "tenant-delta",
+         "role_requirements": [{"role": "admin", "min_active": 2, "sensitive": true}],
+         "initial_bindings": {"admin": ["k-taint", "k-x2"]}},
+        {"service_id": "svc-y", "tenant": "tenant-delta",
+         "role_requirements": [{"role": "admin", "min_active": 2, "sensitive": true}],
+         "initial_bindings": {"admin": ["k-taint", "k-y2"]}}
+      ],
+      "candidate_actions": [
+        {"action_id": "D01", "kind": "replace", "risk_cost": 6, "service_id": "svc-y", "window_from_step": 1, "window_to_step": 1,
+         "migrations": [{"role": "admin", "from_credential_id": "k-taint", "to_credential_id": "r-y"}]},
+        {"action_id": "D02", "kind": "replace", "risk_cost": 2, "service_id": "svc-x", "window_from_step": 1, "window_to_step": 5,
+         "migrations": [{"role": "admin", "from_credential_id": "k-taint", "to_credential_id": "r-x"}]},
+        {"action_id": "D03", "kind": "replace", "risk_cost": 1, "service_id": "svc-x", "window_from_step": 1, "window_to_step": 1,
+         "migrations": [{"role": "admin", "from_credential_id": "k-x2", "to_credential_id": "r-x"}]},
+        {"action_id": "D04", "kind": "revoke", "risk_cost": 5, "target_credential_id": "k-taint"}
+      ]
+    },
+    {
+      "case_id": "C05-same-name-cross-tenant",
+      "description": "跨租户同凭据名：display_name 相同但 id/租户不同，风险与撤销只作用于匹配 id 的代数；跨租户替代被 E2006 阻断。",
+      "deadline_step": 4,
+      "credentials": [
+        {"credential_id": "k-eu", "display_name": "deploy-token", "tenant": "tenant-eu", "role": "deploy", "custody_domain": "DOM-1", "generation": "g1", "risk_weight": 8},
+        {"credential_id": "k-us", "display_name": "deploy-token", "tenant": "tenant-us", "role": "deploy", "custody_domain": "DOM-2", "generation": "g1", "risk_weight": 3},
+        {"credential_id": "k-eu-b", "display_name": "deploy-backup", "tenant": "tenant-eu", "role": "deploy", "custody_domain": "DOM-3", "generation": "g1", "risk_weight": 2},
+        {"credential_id": "k-us-b", "display_name": "deploy-backup", "tenant": "tenant-us", "role": "deploy", "custody_domain": "DOM-4", "generation": "g1", "risk_weight": 1}
+      ],
+      "derivation_edges": [],
+      "exposure_records": [
+        {"credential_id": "k-eu", "evidence": "synthetic: eu deploy token in leaked CI log"}
+      ],
+      "replacements": [
+        {"replacement_id": "r-eu", "display_name": "deploy-token-new", "tenant": "tenant-eu", "role": "deploy", "custody_domain": "DOM-9", "available_from_step": 1, "available_to_step": 5},
+        {"replacement_id": "r-us", "display_name": "deploy-token-new", "tenant": "tenant-us", "role": "deploy", "custody_domain": "DOM-8", "available_from_step": 1, "available_to_step": 5}
+      ],
+      "services": [
+        {"service_id": "svc-eu", "tenant": "tenant-eu",
+         "role_requirements": [{"role": "deploy", "min_active": 2, "sensitive": true}],
+         "initial_bindings": {"deploy": ["k-eu", "k-eu-b"]}},
+        {"service_id": "svc-us", "tenant": "tenant-us",
+         "role_requirements": [{"role": "deploy", "min_active": 1, "sensitive": true}],
+         "initial_bindings": {"deploy": ["k-us", "k-us-b"]}}
+      ],
+      "candidate_actions": [
+        {"action_id": "E01", "kind": "replace", "risk_cost": 2, "service_id": "svc-eu", "window_from_step": 1, "window_to_step": 4,
+         "migrations": [{"role": "deploy", "from_credential_id": "k-eu", "to_credential_id": "r-eu"}]},
+        {"action_id": "E02", "kind": "replace", "risk_cost": 1, "service_id": "svc-us", "window_from_step": 1, "window_to_step": 4,
+         "migrations": [{"role": "deploy", "from_credential_id": "k-us", "to_credential_id": "r-us"}]},
+        {"action_id": "E03", "kind": "replace", "risk_cost": 1, "service_id": "svc-eu", "window_from_step": 1, "window_to_step": 4,
+         "migrations": [{"role": "deploy", "from_credential_id": "k-eu", "to_credential_id": "r-us"}]},
+        {"action_id": "E04", "kind": "revoke", "risk_cost": 8, "target_credential_id": "k-eu"},
+        {"action_id": "E05", "kind": "revoke", "risk_cost": 3, "target_credential_id": "k-us"}
+      ]
+    },
+    {
+      "case_id": "C06-custody-domain-isolation",
+      "description": "独立保管域隔离：同一服务两个敏感角色不得共用保管域，违规换绑被 E2005 阻断；合规换绑路径可行。",
+      "deadline_step": 5,
+      "credentials": [
+        {"credential_id": "k-signer", "display_name": "signer-key", "tenant": "tenant-zeta", "role": "signer", "custody_domain": "DOM-1", "generation": "g1", "risk_weight": 9},
+        {"credential_id": "k-approver", "display_name": "approver-key", "tenant": "tenant-zeta", "role": "approver", "custody_domain": "DOM-2", "generation": "g1", "risk_weight": 2},
+        {"credential_id": "k-approver-b", "display_name": "approver-backup", "tenant": "tenant-zeta", "role": "approver", "custody_domain": "DOM-4", "generation": "g1", "risk_weight": 1}
+      ],
+      "derivation_edges": [],
+      "exposure_records": [
+        {"credential_id": "k-signer", "evidence": "synthetic: signer key in leaked HSM export"}
+      ],
+      "replacements": [
+        {"replacement_id": "r-signer-bad", "display_name": "signer-replacement-dom2", "tenant": "tenant-zeta", "role": "signer", "custody_domain": "DOM-2", "available_from_step": 1, "available_to_step": 5},
+        {"replacement_id": "r-signer-ok", "display_name": "signer-replacement-dom9", "tenant": "tenant-zeta", "role": "signer", "custody_domain": "DOM-9", "available_from_step": 1, "available_to_step": 5},
+        {"replacement_id": "r-approver", "display_name": "approver-replacement", "tenant": "tenant-zeta", "role": "approver", "custody_domain": "DOM-8", "available_from_step": 1, "available_to_step": 5}
+      ],
+      "services": [
+        {"service_id": "svc-z", "tenant": "tenant-zeta",
+         "role_requirements": [
+           {"role": "signer", "min_active": 1, "sensitive": true},
+           {"role": "approver", "min_active": 1, "sensitive": true}
+         ],
+         "initial_bindings": {"signer": ["k-signer"], "approver": ["k-approver", "k-approver-b"]}}
+      ],
+      "candidate_actions": [
+        {"action_id": "F01", "kind": "replace", "risk_cost": 1, "service_id": "svc-z", "window_from_step": 1, "window_to_step": 4,
+         "migrations": [{"role": "signer", "from_credential_id": "k-signer", "to_credential_id": "r-signer-bad"}]},
+        {"action_id": "F02", "kind": "replace", "risk_cost": 2, "service_id": "svc-z", "window_from_step": 1, "window_to_step": 4,
+         "migrations": [{"role": "signer", "from_credential_id": "k-signer", "to_credential_id": "r-signer-ok"}]},
+        {"action_id": "F03", "kind": "revoke", "risk_cost": 9, "target_credential_id": "k-signer"},
+        {"action_id": "F04", "kind": "revoke", "risk_cost": 2, "target_credential_id": "k-approver"},
+        {"action_id": "F05", "kind": "replace", "risk_cost": 1, "service_id": "svc-z", "window_from_step": 1, "window_to_step": 1,
+         "migrations": [{"role": "approver", "from_credential_id": "k-approver", "to_credential_id": "r-approver"}]}
+      ]
+    },
+    {
+      "case_id": "C07-deadline-and-window-blocked",
+      "description": "无解案例：唯一换绑窗口晚于截止步（E2009），唯一替代凭据自身可用区间也不覆盖执行步（E2010），撤销将立刻破坏最低可用数（E2004）。",
+      "deadline_step": 1,
+      "credentials": [
+        {"credential_id": "k-lone", "display_name": "lone-key", "tenant": "tenant-eta", "role": "admin", "custody_domain": "DOM-1", "generation": "g1", "risk_weight": 10}
+      ],
+      "derivation_edges": [],
+      "exposure_records": [
+        {"credential_id": "k-lone", "evidence": "synthetic: lone key in leaked laptop image"}
+      ],
+      "replacements": [
+        {"replacement_id": "r-late", "display_name": "late-replacement", "tenant": "tenant-eta", "role": "admin", "custody_domain": "DOM-9", "available_from_step": 3, "available_to_step": 6}
+      ],
+      "services": [
+        {"service_id": "svc-e", "tenant": "tenant-eta",
+         "role_requirements": [{"role": "admin", "min_active": 1, "sensitive": true}],
+         "initial_bindings": {"admin": ["k-lone"]}}
+      ],
+      "candidate_actions": [
+        {"action_id": "G01", "kind": "replace", "risk_cost": 1, "service_id": "svc-e", "window_from_step": 2, "window_to_step": 3,
+         "migrations": [{"role": "admin", "from_credential_id": "k-lone", "to_credential_id": "r-late"}]},
+        {"action_id": "G02", "kind": "revoke", "risk_cost": 10, "target_credential_id": "k-lone"},
+        {"action_id": "G03", "kind": "replace", "risk_cost": 1, "service_id": "svc-e", "window_from_step": 1, "window_to_step": 1,
+         "migrations": [{"role": "admin", "from_credential_id": "k-lone", "to_credential_id": "r-late"}]}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,2058 @@
+{
+  "tool": "leaked-credential-rotation-validator",
+  "offline": true,
+  "case_count": 7,
+  "results": [
+    {
+      "case_id": "C01-basic-feasible-multi-service",
+      "description": "基础可行案例：两个服务共用部分凭据，暴露沿可继承衍生边传播到子代，须先换绑再在截止步前撤销全部受污染代数。",
+      "status": "FEASIBLE",
+      "objective": {
+        "rule": "min(total_risk_cost), then min(sequence_length), then lexicographic(action_ids)",
+        "optimal_total_risk_cost": 18,
+        "sequence_length": 4,
+        "action_id_sequence": [
+          "A01",
+          "A02",
+          "A03",
+          "A04"
+        ]
+      },
+      "deadline_step": 4,
+      "risk_propagation": {
+        "explicitly_exposed": [
+          "k-root"
+        ],
+        "tainted_credentials": [
+          "k-child",
+          "k-root"
+        ],
+        "propagation_paths": [
+          {
+            "credential_id": "k-child",
+            "explicitly_exposed": false,
+            "path": [
+              {
+                "credential_id": "k-root",
+                "display_name": "root-key",
+                "tenant": "tenant-alpha",
+                "generation": "g1"
+              },
+              {
+                "credential_id": "k-child",
+                "display_name": "child-key",
+                "tenant": "tenant-alpha",
+                "generation": "g2"
+              }
+            ],
+            "path_edge_ids": [
+              "k-root->k-child"
+            ]
+          },
+          {
+            "credential_id": "k-root",
+            "explicitly_exposed": true,
+            "path": [
+              {
+                "credential_id": "k-root",
+                "display_name": "root-key",
+                "tenant": "tenant-alpha",
+                "generation": "g1"
+              }
+            ],
+            "path_edge_ids": []
+          }
+        ],
+        "derivation_edges": [
+          {
+            "parent_id": "k-root",
+            "child_id": "k-child",
+            "inherit_risk": true,
+            "blocks_propagation": false
+          },
+          {
+            "parent_id": "k-child",
+            "child_id": "k-billing",
+            "inherit_risk": false,
+            "blocks_propagation": true
+          }
+        ],
+        "blocked_edges": [
+          {
+            "parent_id": "k-child",
+            "child_id": "k-billing"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "step": 0,
+          "label": "initial_state",
+          "action_id": null,
+          "state_snapshot": {
+            "step": 0,
+            "revoked": [],
+            "services": {
+              "svc-a": {
+                "tenant": "tenant-alpha",
+                "roles": {
+                  "admin": {
+                    "active_bindings": [
+                      "k-root",
+                      "k-other"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 2,
+                    "sensitive": true,
+                    "satisfied": true
+                  },
+                  "billing": {
+                    "active_bindings": [
+                      "k-billing"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 1,
+                    "sensitive": false,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              },
+              "svc-b": {
+                "tenant": "tenant-alpha",
+                "roles": {
+                  "admin": {
+                    "active_bindings": [
+                      "k-child"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 1,
+                    "sensitive": true,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              }
+            },
+            "violations": []
+          }
+        },
+        {
+          "step": 1,
+          "label": "apply",
+          "action_id": "A01",
+          "kind": "replace",
+          "risk_cost": 1,
+          "cumulative_cost": 1,
+          "state_snapshot": {
+            "step": 1,
+            "revoked": [],
+            "services": {
+              "svc-a": {
+                "tenant": "tenant-alpha",
+                "roles": {
+                  "admin": {
+                    "active_bindings": [
+                      "k-other",
+                      "r-admin-a"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 2,
+                    "sensitive": true,
+                    "satisfied": true
+                  },
+                  "billing": {
+                    "active_bindings": [
+                      "k-billing"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 1,
+                    "sensitive": false,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              },
+              "svc-b": {
+                "tenant": "tenant-alpha",
+                "roles": {
+                  "admin": {
+                    "active_bindings": [
+                      "k-child"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 1,
+                    "sensitive": true,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              }
+            },
+            "violations": []
+          },
+          "service_id": "svc-a",
+          "config_window": [
+            1,
+            3
+          ],
+          "window_check": {
+            "step": 1,
+            "within_window": true
+          },
+          "atomic_migrations": [
+            {
+              "role": "admin",
+              "from_credential_id": "k-root",
+              "to_credential_id": "r-admin-a",
+              "target_kind": "replacement",
+              "replacement_available_window": [
+                1,
+                6
+              ],
+              "replacement_window_check": true
+            }
+          ]
+        },
+        {
+          "step": 2,
+          "label": "apply",
+          "action_id": "A02",
+          "kind": "replace",
+          "risk_cost": 1,
+          "cumulative_cost": 2,
+          "state_snapshot": {
+            "step": 2,
+            "revoked": [],
+            "services": {
+              "svc-a": {
+                "tenant": "tenant-alpha",
+                "roles": {
+                  "admin": {
+                    "active_bindings": [
+                      "k-other",
+                      "r-admin-a"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 2,
+                    "sensitive": true,
+                    "satisfied": true
+                  },
+                  "billing": {
+                    "active_bindings": [
+                      "k-billing"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 1,
+                    "sensitive": false,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              },
+              "svc-b": {
+                "tenant": "tenant-alpha",
+                "roles": {
+                  "admin": {
+                    "active_bindings": [
+                      "r-admin-b"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 1,
+                    "sensitive": true,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              }
+            },
+            "violations": []
+          },
+          "service_id": "svc-b",
+          "config_window": [
+            1,
+            3
+          ],
+          "window_check": {
+            "step": 2,
+            "within_window": true
+          },
+          "atomic_migrations": [
+            {
+              "role": "admin",
+              "from_credential_id": "k-child",
+              "to_credential_id": "r-admin-b",
+              "target_kind": "replacement",
+              "replacement_available_window": [
+                1,
+                6
+              ],
+              "replacement_window_check": true
+            }
+          ]
+        },
+        {
+          "step": 3,
+          "label": "apply",
+          "action_id": "A03",
+          "kind": "revoke",
+          "risk_cost": 10,
+          "cumulative_cost": 12,
+          "state_snapshot": {
+            "step": 3,
+            "revoked": [
+              "k-root"
+            ],
+            "services": {
+              "svc-a": {
+                "tenant": "tenant-alpha",
+                "roles": {
+                  "admin": {
+                    "active_bindings": [
+                      "k-other",
+                      "r-admin-a"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 2,
+                    "sensitive": true,
+                    "satisfied": true
+                  },
+                  "billing": {
+                    "active_bindings": [
+                      "k-billing"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 1,
+                    "sensitive": false,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              },
+              "svc-b": {
+                "tenant": "tenant-alpha",
+                "roles": {
+                  "admin": {
+                    "active_bindings": [
+                      "r-admin-b"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 1,
+                    "sensitive": true,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              }
+            },
+            "violations": []
+          },
+          "revoked_credential": "k-root",
+          "deadline_check": {
+            "step": 3,
+            "deadline_step": 4,
+            "within_deadline": true,
+            "target_tainted": true
+          }
+        },
+        {
+          "step": 4,
+          "label": "apply",
+          "action_id": "A04",
+          "kind": "revoke",
+          "risk_cost": 6,
+          "cumulative_cost": 18,
+          "state_snapshot": {
+            "step": 4,
+            "revoked": [
+              "k-child",
+              "k-root"
+            ],
+            "services": {
+              "svc-a": {
+                "tenant": "tenant-alpha",
+                "roles": {
+                  "admin": {
+                    "active_bindings": [
+                      "k-other",
+                      "r-admin-a"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 2,
+                    "sensitive": true,
+                    "satisfied": true
+                  },
+                  "billing": {
+                    "active_bindings": [
+                      "k-billing"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 1,
+                    "sensitive": false,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              },
+              "svc-b": {
+                "tenant": "tenant-alpha",
+                "roles": {
+                  "admin": {
+                    "active_bindings": [
+                      "r-admin-b"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 1,
+                    "sensitive": true,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              }
+            },
+            "violations": []
+          },
+          "revoked_credential": "k-child",
+          "deadline_check": {
+            "step": 4,
+            "deadline_step": 4,
+            "within_deadline": true,
+            "target_tainted": true
+          }
+        }
+      ],
+      "final_coverage_check": {
+        "tainted_total": 2,
+        "tainted_revoked": 2,
+        "all_tainted_revoked_before_deadline": true,
+        "coverage_weight": 16,
+        "total_coverage_weight": 16,
+        "rows": [
+          {
+            "credential_id": "k-child",
+            "display_name": "child-key",
+            "tenant": "tenant-alpha",
+            "generation": "g2",
+            "risk_weight": 6,
+            "revoked": true,
+            "propagation_path": [
+              "k-root",
+              "k-child"
+            ]
+          },
+          {
+            "credential_id": "k-root",
+            "display_name": "root-key",
+            "tenant": "tenant-alpha",
+            "generation": "g1",
+            "risk_weight": 10,
+            "revoked": true,
+            "propagation_path": [
+              "k-root"
+            ]
+          }
+        ],
+        "continuity_compliant": true,
+        "violations": []
+      },
+      "search_stats": {
+        "reachable_states": 24,
+        "transitions_attempted": 44,
+        "visited_executed_sets": 16
+      }
+    },
+    {
+      "case_id": "C02-revoke-alone-ok-combo-fails",
+      "description": "无解案例：两项撤销各自单独可行（剩余凭据仍满足最低数），但组合后两服务同时失去唯一活跃管理员；无替代凭据可用。",
+      "status": "INFEASIBLE",
+      "objective": {
+        "rule": "min(total_risk_cost), then min(sequence_length), then lexicographic(action_ids)",
+        "optimal_total_risk_cost": 6,
+        "sequence_length": 2,
+        "action_id_sequence": [
+          "B02",
+          "B03"
+        ]
+      },
+      "deadline_step": 3,
+      "risk_propagation": {
+        "explicitly_exposed": [
+          "k-shared"
+        ],
+        "tainted_credentials": [
+          "k-s1",
+          "k-s2",
+          "k-shared"
+        ],
+        "propagation_paths": [
+          {
+            "credential_id": "k-s1",
+            "explicitly_exposed": false,
+            "path": [
+              {
+                "credential_id": "k-shared",
+                "display_name": "shared-admin",
+                "tenant": "tenant-beta",
+                "generation": "g1"
+              },
+              {
+                "credential_id": "k-s1",
+                "display_name": "s1-admin",
+                "tenant": "tenant-beta",
+                "generation": "g1"
+              }
+            ],
+            "path_edge_ids": [
+              "k-shared->k-s1"
+            ]
+          },
+          {
+            "credential_id": "k-s2",
+            "explicitly_exposed": false,
+            "path": [
+              {
+                "credential_id": "k-shared",
+                "display_name": "shared-admin",
+                "tenant": "tenant-beta",
+                "generation": "g1"
+              },
+              {
+                "credential_id": "k-s2",
+                "display_name": "s2-admin",
+                "tenant": "tenant-beta",
+                "generation": "g1"
+              }
+            ],
+            "path_edge_ids": [
+              "k-shared->k-s2"
+            ]
+          },
+          {
+            "credential_id": "k-shared",
+            "explicitly_exposed": true,
+            "path": [
+              {
+                "credential_id": "k-shared",
+                "display_name": "shared-admin",
+                "tenant": "tenant-beta",
+                "generation": "g1"
+              }
+            ],
+            "path_edge_ids": []
+          }
+        ],
+        "derivation_edges": [
+          {
+            "parent_id": "k-shared",
+            "child_id": "k-s1",
+            "inherit_risk": true,
+            "blocks_propagation": false
+          },
+          {
+            "parent_id": "k-shared",
+            "child_id": "k-s2",
+            "inherit_risk": true,
+            "blocks_propagation": false
+          }
+        ],
+        "blocked_edges": []
+      },
+      "steps": [
+        {
+          "step": 0,
+          "label": "initial_state",
+          "action_id": null,
+          "state_snapshot": {
+            "step": 0,
+            "revoked": [],
+            "services": {
+              "svc-1": {
+                "tenant": "tenant-beta",
+                "roles": {
+                  "admin": {
+                    "active_bindings": [
+                      "k-shared",
+                      "k-s1"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 1,
+                    "sensitive": true,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              },
+              "svc-2": {
+                "tenant": "tenant-beta",
+                "roles": {
+                  "admin": {
+                    "active_bindings": [
+                      "k-shared",
+                      "k-s2"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 1,
+                    "sensitive": true,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              }
+            },
+            "violations": []
+          }
+        },
+        {
+          "step": 1,
+          "label": "apply",
+          "action_id": "B02",
+          "kind": "revoke",
+          "risk_cost": 3,
+          "cumulative_cost": 3,
+          "state_snapshot": {
+            "step": 1,
+            "revoked": [
+              "k-s1"
+            ],
+            "services": {
+              "svc-1": {
+                "tenant": "tenant-beta",
+                "roles": {
+                  "admin": {
+                    "active_bindings": [
+                      "k-shared"
+                    ],
+                    "revoked_bindings": [
+                      "k-s1"
+                    ],
+                    "min_active": 1,
+                    "sensitive": true,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              },
+              "svc-2": {
+                "tenant": "tenant-beta",
+                "roles": {
+                  "admin": {
+                    "active_bindings": [
+                      "k-shared",
+                      "k-s2"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 1,
+                    "sensitive": true,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              }
+            },
+            "violations": []
+          },
+          "revoked_credential": "k-s1",
+          "deadline_check": {
+            "step": 1,
+            "deadline_step": 3,
+            "within_deadline": true,
+            "target_tainted": true
+          }
+        },
+        {
+          "step": 2,
+          "label": "apply",
+          "action_id": "B03",
+          "kind": "revoke",
+          "risk_cost": 3,
+          "cumulative_cost": 6,
+          "state_snapshot": {
+            "step": 2,
+            "revoked": [
+              "k-s1",
+              "k-s2"
+            ],
+            "services": {
+              "svc-1": {
+                "tenant": "tenant-beta",
+                "roles": {
+                  "admin": {
+                    "active_bindings": [
+                      "k-shared"
+                    ],
+                    "revoked_bindings": [
+                      "k-s1"
+                    ],
+                    "min_active": 1,
+                    "sensitive": true,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              },
+              "svc-2": {
+                "tenant": "tenant-beta",
+                "roles": {
+                  "admin": {
+                    "active_bindings": [
+                      "k-shared"
+                    ],
+                    "revoked_bindings": [
+                      "k-s2"
+                    ],
+                    "min_active": 1,
+                    "sensitive": true,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              }
+            },
+            "violations": []
+          },
+          "revoked_credential": "k-s2",
+          "deadline_check": {
+            "step": 2,
+            "deadline_step": 3,
+            "within_deadline": true,
+            "target_tainted": true
+          }
+        }
+      ],
+      "final_coverage_check": {
+        "tainted_total": 3,
+        "tainted_revoked": 2,
+        "all_tainted_revoked_before_deadline": false,
+        "coverage_weight": 12,
+        "total_coverage_weight": 22,
+        "rows": [
+          {
+            "credential_id": "k-s1",
+            "display_name": "s1-admin",
+            "tenant": "tenant-beta",
+            "generation": "g1",
+            "risk_weight": 6,
+            "revoked": true,
+            "propagation_path": [
+              "k-shared",
+              "k-s1"
+            ]
+          },
+          {
+            "credential_id": "k-s2",
+            "display_name": "s2-admin",
+            "tenant": "tenant-beta",
+            "generation": "g1",
+            "risk_weight": 6,
+            "revoked": true,
+            "propagation_path": [
+              "k-shared",
+              "k-s2"
+            ]
+          },
+          {
+            "credential_id": "k-shared",
+            "display_name": "shared-admin",
+            "tenant": "tenant-beta",
+            "generation": "g1",
+            "risk_weight": 10,
+            "revoked": false,
+            "propagation_path": [
+              "k-shared"
+            ]
+          }
+        ],
+        "continuity_compliant": true,
+        "violations": []
+      },
+      "search_stats": {
+        "reachable_states": 6,
+        "transitions_attempted": 10,
+        "visited_executed_sets": 5
+      },
+      "infeasibility_evidence": {
+        "best_reachable_state": {
+          "action_id_sequence": [
+            "B02",
+            "B03"
+          ],
+          "total_risk_cost": 6,
+          "revoked": [
+            "k-s1",
+            "k-s2"
+          ],
+          "state_snapshot": {
+            "step": 2,
+            "revoked": [
+              "k-s1",
+              "k-s2"
+            ],
+            "services": {
+              "svc-1": {
+                "tenant": "tenant-beta",
+                "roles": {
+                  "admin": {
+                    "active_bindings": [
+                      "k-shared"
+                    ],
+                    "revoked_bindings": [
+                      "k-s1"
+                    ],
+                    "min_active": 1,
+                    "sensitive": true,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              },
+              "svc-2": {
+                "tenant": "tenant-beta",
+                "roles": {
+                  "admin": {
+                    "active_bindings": [
+                      "k-shared"
+                    ],
+                    "revoked_bindings": [
+                      "k-s2"
+                    ],
+                    "min_active": 1,
+                    "sensitive": true,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              }
+            },
+            "violations": []
+          }
+        },
+        "revocation_risk_coverage": {
+          "covered_weight": 12,
+          "total_weight": 22,
+          "gap_weight": 10,
+          "tainted_remaining": [
+            "k-shared"
+          ]
+        },
+        "next_step_blockers": [
+          {
+            "action_id": "B01",
+            "code": "E2004",
+            "reason": "撤销 k-shared 破坏连续性: 服务 svc-1 角色 admin 活跃 0 < 最低 1",
+            "detail": {
+              "role": "admin",
+              "active": [],
+              "min_active": 1,
+              "revoked_in_binding": [
+                "k-shared",
+                "k-s1"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "C03-tainted-derived-replacement-forbidden",
+      "description": "已暴露的衍生凭据不可作为替代：迁移到受污染真实代数被 E2008 阻断，干净替代凭据路径可行。",
+      "status": "FEASIBLE",
+      "objective": {
+        "rule": "min(total_risk_cost), then min(sequence_length), then lexicographic(action_ids)",
+        "optimal_total_risk_cost": 19,
+        "sequence_length": 3,
+        "action_id_sequence": [
+          "C02",
+          "C03",
+          "C04"
+        ]
+      },
+      "deadline_step": 3,
+      "risk_propagation": {
+        "explicitly_exposed": [
+          "k-p"
+        ],
+        "tainted_credentials": [
+          "k-derived",
+          "k-p"
+        ],
+        "propagation_paths": [
+          {
+            "credential_id": "k-derived",
+            "explicitly_exposed": false,
+            "path": [
+              {
+                "credential_id": "k-p",
+                "display_name": "parent-key",
+                "tenant": "tenant-gamma",
+                "generation": "g1"
+              },
+              {
+                "credential_id": "k-derived",
+                "display_name": "derived-key",
+                "tenant": "tenant-gamma",
+                "generation": "g2"
+              }
+            ],
+            "path_edge_ids": [
+              "k-p->k-derived"
+            ]
+          },
+          {
+            "credential_id": "k-p",
+            "explicitly_exposed": true,
+            "path": [
+              {
+                "credential_id": "k-p",
+                "display_name": "parent-key",
+                "tenant": "tenant-gamma",
+                "generation": "g1"
+              }
+            ],
+            "path_edge_ids": []
+          }
+        ],
+        "derivation_edges": [
+          {
+            "parent_id": "k-p",
+            "child_id": "k-derived",
+            "inherit_risk": true,
+            "blocks_propagation": false
+          }
+        ],
+        "blocked_edges": []
+      },
+      "steps": [
+        {
+          "step": 0,
+          "label": "initial_state",
+          "action_id": null,
+          "state_snapshot": {
+            "step": 0,
+            "revoked": [],
+            "services": {
+              "svc-g": {
+                "tenant": "tenant-gamma",
+                "roles": {
+                  "admin": {
+                    "active_bindings": [
+                      "k-p",
+                      "k-standby"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 2,
+                    "sensitive": true,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              }
+            },
+            "violations": []
+          }
+        },
+        {
+          "step": 1,
+          "label": "apply",
+          "action_id": "C02",
+          "kind": "replace",
+          "risk_cost": 2,
+          "cumulative_cost": 2,
+          "state_snapshot": {
+            "step": 1,
+            "revoked": [],
+            "services": {
+              "svc-g": {
+                "tenant": "tenant-gamma",
+                "roles": {
+                  "admin": {
+                    "active_bindings": [
+                      "k-standby",
+                      "r-clean"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 2,
+                    "sensitive": true,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              }
+            },
+            "violations": []
+          },
+          "service_id": "svc-g",
+          "config_window": [
+            1,
+            3
+          ],
+          "window_check": {
+            "step": 1,
+            "within_window": true
+          },
+          "atomic_migrations": [
+            {
+              "role": "admin",
+              "from_credential_id": "k-p",
+              "to_credential_id": "r-clean",
+              "target_kind": "replacement",
+              "replacement_available_window": [
+                1,
+                5
+              ],
+              "replacement_window_check": true
+            }
+          ]
+        },
+        {
+          "step": 2,
+          "label": "apply",
+          "action_id": "C03",
+          "kind": "revoke",
+          "risk_cost": 10,
+          "cumulative_cost": 12,
+          "state_snapshot": {
+            "step": 2,
+            "revoked": [
+              "k-p"
+            ],
+            "services": {
+              "svc-g": {
+                "tenant": "tenant-gamma",
+                "roles": {
+                  "admin": {
+                    "active_bindings": [
+                      "k-standby",
+                      "r-clean"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 2,
+                    "sensitive": true,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              }
+            },
+            "violations": []
+          },
+          "revoked_credential": "k-p",
+          "deadline_check": {
+            "step": 2,
+            "deadline_step": 3,
+            "within_deadline": true,
+            "target_tainted": true
+          }
+        },
+        {
+          "step": 3,
+          "label": "apply",
+          "action_id": "C04",
+          "kind": "revoke",
+          "risk_cost": 7,
+          "cumulative_cost": 19,
+          "state_snapshot": {
+            "step": 3,
+            "revoked": [
+              "k-derived",
+              "k-p"
+            ],
+            "services": {
+              "svc-g": {
+                "tenant": "tenant-gamma",
+                "roles": {
+                  "admin": {
+                    "active_bindings": [
+                      "k-standby",
+                      "r-clean"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 2,
+                    "sensitive": true,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              }
+            },
+            "violations": []
+          },
+          "revoked_credential": "k-derived",
+          "deadline_check": {
+            "step": 3,
+            "deadline_step": 3,
+            "within_deadline": true,
+            "target_tainted": true
+          }
+        }
+      ],
+      "final_coverage_check": {
+        "tainted_total": 2,
+        "tainted_revoked": 2,
+        "all_tainted_revoked_before_deadline": true,
+        "coverage_weight": 17,
+        "total_coverage_weight": 17,
+        "rows": [
+          {
+            "credential_id": "k-derived",
+            "display_name": "derived-key",
+            "tenant": "tenant-gamma",
+            "generation": "g2",
+            "risk_weight": 7,
+            "revoked": true,
+            "propagation_path": [
+              "k-p",
+              "k-derived"
+            ]
+          },
+          {
+            "credential_id": "k-p",
+            "display_name": "parent-key",
+            "tenant": "tenant-gamma",
+            "generation": "g1",
+            "risk_weight": 10,
+            "revoked": true,
+            "propagation_path": [
+              "k-p"
+            ]
+          }
+        ],
+        "continuity_compliant": true,
+        "violations": []
+      },
+      "search_stats": {
+        "reachable_states": 8,
+        "transitions_attempted": 14,
+        "visited_executed_sets": 5
+      }
+    },
+    {
+      "case_id": "C04-non-greedy-cross-service-rebind",
+      "description": "非贪心跨服务换绑：污染凭据被两个服务共用。贪心第1步选廉价动作 D03 会耗尽 svc-y 的唯一迁移窗口（D01 仅第1步可执行）而走入死锁；最优解必须先在 svc-y 做较贵的腾出动作。",
+      "status": "FEASIBLE",
+      "objective": {
+        "rule": "min(total_risk_cost), then min(sequence_length), then lexicographic(action_ids)",
+        "optimal_total_risk_cost": 13,
+        "sequence_length": 3,
+        "action_id_sequence": [
+          "D01",
+          "D02",
+          "D04"
+        ]
+      },
+      "deadline_step": 5,
+      "risk_propagation": {
+        "explicitly_exposed": [
+          "k-taint"
+        ],
+        "tainted_credentials": [
+          "k-taint"
+        ],
+        "propagation_paths": [
+          {
+            "credential_id": "k-taint",
+            "explicitly_exposed": true,
+            "path": [
+              {
+                "credential_id": "k-taint",
+                "display_name": "tainted-key",
+                "tenant": "tenant-delta",
+                "generation": "g1"
+              }
+            ],
+            "path_edge_ids": []
+          }
+        ],
+        "derivation_edges": [],
+        "blocked_edges": []
+      },
+      "steps": [
+        {
+          "step": 0,
+          "label": "initial_state",
+          "action_id": null,
+          "state_snapshot": {
+            "step": 0,
+            "revoked": [],
+            "services": {
+              "svc-x": {
+                "tenant": "tenant-delta",
+                "roles": {
+                  "admin": {
+                    "active_bindings": [
+                      "k-taint",
+                      "k-x2"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 2,
+                    "sensitive": true,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              },
+              "svc-y": {
+                "tenant": "tenant-delta",
+                "roles": {
+                  "admin": {
+                    "active_bindings": [
+                      "k-taint",
+                      "k-y2"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 2,
+                    "sensitive": true,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              }
+            },
+            "violations": []
+          }
+        },
+        {
+          "step": 1,
+          "label": "apply",
+          "action_id": "D01",
+          "kind": "replace",
+          "risk_cost": 6,
+          "cumulative_cost": 6,
+          "state_snapshot": {
+            "step": 1,
+            "revoked": [],
+            "services": {
+              "svc-x": {
+                "tenant": "tenant-delta",
+                "roles": {
+                  "admin": {
+                    "active_bindings": [
+                      "k-taint",
+                      "k-x2"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 2,
+                    "sensitive": true,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              },
+              "svc-y": {
+                "tenant": "tenant-delta",
+                "roles": {
+                  "admin": {
+                    "active_bindings": [
+                      "k-y2",
+                      "r-y"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 2,
+                    "sensitive": true,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              }
+            },
+            "violations": []
+          },
+          "service_id": "svc-y",
+          "config_window": [
+            1,
+            1
+          ],
+          "window_check": {
+            "step": 1,
+            "within_window": true
+          },
+          "atomic_migrations": [
+            {
+              "role": "admin",
+              "from_credential_id": "k-taint",
+              "to_credential_id": "r-y",
+              "target_kind": "replacement",
+              "replacement_available_window": [
+                1,
+                5
+              ],
+              "replacement_window_check": true
+            }
+          ]
+        },
+        {
+          "step": 2,
+          "label": "apply",
+          "action_id": "D02",
+          "kind": "replace",
+          "risk_cost": 2,
+          "cumulative_cost": 8,
+          "state_snapshot": {
+            "step": 2,
+            "revoked": [],
+            "services": {
+              "svc-x": {
+                "tenant": "tenant-delta",
+                "roles": {
+                  "admin": {
+                    "active_bindings": [
+                      "k-x2",
+                      "r-x"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 2,
+                    "sensitive": true,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              },
+              "svc-y": {
+                "tenant": "tenant-delta",
+                "roles": {
+                  "admin": {
+                    "active_bindings": [
+                      "k-y2",
+                      "r-y"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 2,
+                    "sensitive": true,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              }
+            },
+            "violations": []
+          },
+          "service_id": "svc-x",
+          "config_window": [
+            1,
+            5
+          ],
+          "window_check": {
+            "step": 2,
+            "within_window": true
+          },
+          "atomic_migrations": [
+            {
+              "role": "admin",
+              "from_credential_id": "k-taint",
+              "to_credential_id": "r-x",
+              "target_kind": "replacement",
+              "replacement_available_window": [
+                1,
+                5
+              ],
+              "replacement_window_check": true
+            }
+          ]
+        },
+        {
+          "step": 3,
+          "label": "apply",
+          "action_id": "D04",
+          "kind": "revoke",
+          "risk_cost": 5,
+          "cumulative_cost": 13,
+          "state_snapshot": {
+            "step": 3,
+            "revoked": [
+              "k-taint"
+            ],
+            "services": {
+              "svc-x": {
+                "tenant": "tenant-delta",
+                "roles": {
+                  "admin": {
+                    "active_bindings": [
+                      "k-x2",
+                      "r-x"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 2,
+                    "sensitive": true,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              },
+              "svc-y": {
+                "tenant": "tenant-delta",
+                "roles": {
+                  "admin": {
+                    "active_bindings": [
+                      "k-y2",
+                      "r-y"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 2,
+                    "sensitive": true,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              }
+            },
+            "violations": []
+          },
+          "revoked_credential": "k-taint",
+          "deadline_check": {
+            "step": 3,
+            "deadline_step": 5,
+            "within_deadline": true,
+            "target_tainted": true
+          }
+        }
+      ],
+      "final_coverage_check": {
+        "tainted_total": 1,
+        "tainted_revoked": 1,
+        "all_tainted_revoked_before_deadline": true,
+        "coverage_weight": 10,
+        "total_coverage_weight": 10,
+        "rows": [
+          {
+            "credential_id": "k-taint",
+            "display_name": "tainted-key",
+            "tenant": "tenant-delta",
+            "generation": "g1",
+            "risk_weight": 10,
+            "revoked": true,
+            "propagation_path": [
+              "k-taint"
+            ]
+          }
+        ],
+        "continuity_compliant": true,
+        "violations": []
+      },
+      "search_stats": {
+        "reachable_states": 6,
+        "transitions_attempted": 15,
+        "visited_executed_sets": 5
+      }
+    },
+    {
+      "case_id": "C05-same-name-cross-tenant",
+      "description": "跨租户同凭据名：display_name 相同但 id/租户不同，风险与撤销只作用于匹配 id 的代数；跨租户替代被 E2006 阻断。",
+      "status": "FEASIBLE",
+      "objective": {
+        "rule": "min(total_risk_cost), then min(sequence_length), then lexicographic(action_ids)",
+        "optimal_total_risk_cost": 10,
+        "sequence_length": 2,
+        "action_id_sequence": [
+          "E01",
+          "E04"
+        ]
+      },
+      "deadline_step": 4,
+      "risk_propagation": {
+        "explicitly_exposed": [
+          "k-eu"
+        ],
+        "tainted_credentials": [
+          "k-eu"
+        ],
+        "propagation_paths": [
+          {
+            "credential_id": "k-eu",
+            "explicitly_exposed": true,
+            "path": [
+              {
+                "credential_id": "k-eu",
+                "display_name": "deploy-token",
+                "tenant": "tenant-eu",
+                "generation": "g1"
+              }
+            ],
+            "path_edge_ids": []
+          }
+        ],
+        "derivation_edges": [],
+        "blocked_edges": []
+      },
+      "steps": [
+        {
+          "step": 0,
+          "label": "initial_state",
+          "action_id": null,
+          "state_snapshot": {
+            "step": 0,
+            "revoked": [],
+            "services": {
+              "svc-eu": {
+                "tenant": "tenant-eu",
+                "roles": {
+                  "deploy": {
+                    "active_bindings": [
+                      "k-eu",
+                      "k-eu-b"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 2,
+                    "sensitive": true,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              },
+              "svc-us": {
+                "tenant": "tenant-us",
+                "roles": {
+                  "deploy": {
+                    "active_bindings": [
+                      "k-us",
+                      "k-us-b"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 1,
+                    "sensitive": true,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              }
+            },
+            "violations": []
+          }
+        },
+        {
+          "step": 1,
+          "label": "apply",
+          "action_id": "E01",
+          "kind": "replace",
+          "risk_cost": 2,
+          "cumulative_cost": 2,
+          "state_snapshot": {
+            "step": 1,
+            "revoked": [],
+            "services": {
+              "svc-eu": {
+                "tenant": "tenant-eu",
+                "roles": {
+                  "deploy": {
+                    "active_bindings": [
+                      "k-eu-b",
+                      "r-eu"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 2,
+                    "sensitive": true,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              },
+              "svc-us": {
+                "tenant": "tenant-us",
+                "roles": {
+                  "deploy": {
+                    "active_bindings": [
+                      "k-us",
+                      "k-us-b"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 1,
+                    "sensitive": true,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              }
+            },
+            "violations": []
+          },
+          "service_id": "svc-eu",
+          "config_window": [
+            1,
+            4
+          ],
+          "window_check": {
+            "step": 1,
+            "within_window": true
+          },
+          "atomic_migrations": [
+            {
+              "role": "deploy",
+              "from_credential_id": "k-eu",
+              "to_credential_id": "r-eu",
+              "target_kind": "replacement",
+              "replacement_available_window": [
+                1,
+                5
+              ],
+              "replacement_window_check": true
+            }
+          ]
+        },
+        {
+          "step": 2,
+          "label": "apply",
+          "action_id": "E04",
+          "kind": "revoke",
+          "risk_cost": 8,
+          "cumulative_cost": 10,
+          "state_snapshot": {
+            "step": 2,
+            "revoked": [
+              "k-eu"
+            ],
+            "services": {
+              "svc-eu": {
+                "tenant": "tenant-eu",
+                "roles": {
+                  "deploy": {
+                    "active_bindings": [
+                      "k-eu-b",
+                      "r-eu"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 2,
+                    "sensitive": true,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              },
+              "svc-us": {
+                "tenant": "tenant-us",
+                "roles": {
+                  "deploy": {
+                    "active_bindings": [
+                      "k-us",
+                      "k-us-b"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 1,
+                    "sensitive": true,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              }
+            },
+            "violations": []
+          },
+          "revoked_credential": "k-eu",
+          "deadline_check": {
+            "step": 2,
+            "deadline_step": 4,
+            "within_deadline": true,
+            "target_tainted": true
+          }
+        }
+      ],
+      "final_coverage_check": {
+        "tainted_total": 1,
+        "tainted_revoked": 1,
+        "all_tainted_revoked_before_deadline": true,
+        "coverage_weight": 8,
+        "total_coverage_weight": 8,
+        "rows": [
+          {
+            "credential_id": "k-eu",
+            "display_name": "deploy-token",
+            "tenant": "tenant-eu",
+            "generation": "g1",
+            "risk_weight": 8,
+            "revoked": true,
+            "propagation_path": [
+              "k-eu"
+            ]
+          }
+        ],
+        "continuity_compliant": true,
+        "violations": []
+      },
+      "search_stats": {
+        "reachable_states": 17,
+        "transitions_attempted": 28,
+        "visited_executed_sets": 8
+      }
+    },
+    {
+      "case_id": "C06-custody-domain-isolation",
+      "description": "独立保管域隔离：同一服务两个敏感角色不得共用保管域，违规换绑被 E2005 阻断；合规换绑路径可行。",
+      "status": "FEASIBLE",
+      "objective": {
+        "rule": "min(total_risk_cost), then min(sequence_length), then lexicographic(action_ids)",
+        "optimal_total_risk_cost": 11,
+        "sequence_length": 2,
+        "action_id_sequence": [
+          "F02",
+          "F03"
+        ]
+      },
+      "deadline_step": 5,
+      "risk_propagation": {
+        "explicitly_exposed": [
+          "k-signer"
+        ],
+        "tainted_credentials": [
+          "k-signer"
+        ],
+        "propagation_paths": [
+          {
+            "credential_id": "k-signer",
+            "explicitly_exposed": true,
+            "path": [
+              {
+                "credential_id": "k-signer",
+                "display_name": "signer-key",
+                "tenant": "tenant-zeta",
+                "generation": "g1"
+              }
+            ],
+            "path_edge_ids": []
+          }
+        ],
+        "derivation_edges": [],
+        "blocked_edges": []
+      },
+      "steps": [
+        {
+          "step": 0,
+          "label": "initial_state",
+          "action_id": null,
+          "state_snapshot": {
+            "step": 0,
+            "revoked": [],
+            "services": {
+              "svc-z": {
+                "tenant": "tenant-zeta",
+                "roles": {
+                  "signer": {
+                    "active_bindings": [
+                      "k-signer"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 1,
+                    "sensitive": true,
+                    "satisfied": true
+                  },
+                  "approver": {
+                    "active_bindings": [
+                      "k-approver",
+                      "k-approver-b"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 1,
+                    "sensitive": true,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              }
+            },
+            "violations": []
+          }
+        },
+        {
+          "step": 1,
+          "label": "apply",
+          "action_id": "F02",
+          "kind": "replace",
+          "risk_cost": 2,
+          "cumulative_cost": 2,
+          "state_snapshot": {
+            "step": 1,
+            "revoked": [],
+            "services": {
+              "svc-z": {
+                "tenant": "tenant-zeta",
+                "roles": {
+                  "signer": {
+                    "active_bindings": [
+                      "r-signer-ok"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 1,
+                    "sensitive": true,
+                    "satisfied": true
+                  },
+                  "approver": {
+                    "active_bindings": [
+                      "k-approver",
+                      "k-approver-b"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 1,
+                    "sensitive": true,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              }
+            },
+            "violations": []
+          },
+          "service_id": "svc-z",
+          "config_window": [
+            1,
+            4
+          ],
+          "window_check": {
+            "step": 1,
+            "within_window": true
+          },
+          "atomic_migrations": [
+            {
+              "role": "signer",
+              "from_credential_id": "k-signer",
+              "to_credential_id": "r-signer-ok",
+              "target_kind": "replacement",
+              "replacement_available_window": [
+                1,
+                5
+              ],
+              "replacement_window_check": true
+            }
+          ]
+        },
+        {
+          "step": 2,
+          "label": "apply",
+          "action_id": "F03",
+          "kind": "revoke",
+          "risk_cost": 9,
+          "cumulative_cost": 11,
+          "state_snapshot": {
+            "step": 2,
+            "revoked": [
+              "k-signer"
+            ],
+            "services": {
+              "svc-z": {
+                "tenant": "tenant-zeta",
+                "roles": {
+                  "signer": {
+                    "active_bindings": [
+                      "r-signer-ok"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 1,
+                    "sensitive": true,
+                    "satisfied": true
+                  },
+                  "approver": {
+                    "active_bindings": [
+                      "k-approver",
+                      "k-approver-b"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 1,
+                    "sensitive": true,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              }
+            },
+            "violations": []
+          },
+          "revoked_credential": "k-signer",
+          "deadline_check": {
+            "step": 2,
+            "deadline_step": 5,
+            "within_deadline": true,
+            "target_tainted": true
+          }
+        }
+      ],
+      "final_coverage_check": {
+        "tainted_total": 1,
+        "tainted_revoked": 1,
+        "all_tainted_revoked_before_deadline": true,
+        "coverage_weight": 9,
+        "total_coverage_weight": 9,
+        "rows": [
+          {
+            "credential_id": "k-signer",
+            "display_name": "signer-key",
+            "tenant": "tenant-zeta",
+            "generation": "g1",
+            "risk_weight": 9,
+            "revoked": true,
+            "propagation_path": [
+              "k-signer"
+            ]
+          }
+        ],
+        "continuity_compliant": true,
+        "violations": []
+      },
+      "search_stats": {
+        "reachable_states": 21,
+        "transitions_attempted": 36,
+        "visited_executed_sets": 11
+      }
+    },
+    {
+      "case_id": "C07-deadline-and-window-blocked",
+      "description": "无解案例：唯一换绑窗口晚于截止步（E2009），唯一替代凭据自身可用区间也不覆盖执行步（E2010），撤销将立刻破坏最低可用数（E2004）。",
+      "status": "INFEASIBLE",
+      "objective": {
+        "rule": "min(total_risk_cost), then min(sequence_length), then lexicographic(action_ids)",
+        "optimal_total_risk_cost": 0,
+        "sequence_length": 0,
+        "action_id_sequence": []
+      },
+      "deadline_step": 1,
+      "risk_propagation": {
+        "explicitly_exposed": [
+          "k-lone"
+        ],
+        "tainted_credentials": [
+          "k-lone"
+        ],
+        "propagation_paths": [
+          {
+            "credential_id": "k-lone",
+            "explicitly_exposed": true,
+            "path": [
+              {
+                "credential_id": "k-lone",
+                "display_name": "lone-key",
+                "tenant": "tenant-eta",
+                "generation": "g1"
+              }
+            ],
+            "path_edge_ids": []
+          }
+        ],
+        "derivation_edges": [],
+        "blocked_edges": []
+      },
+      "steps": [
+        {
+          "step": 0,
+          "label": "initial_state",
+          "action_id": null,
+          "state_snapshot": {
+            "step": 0,
+            "revoked": [],
+            "services": {
+              "svc-e": {
+                "tenant": "tenant-eta",
+                "roles": {
+                  "admin": {
+                    "active_bindings": [
+                      "k-lone"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 1,
+                    "sensitive": true,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              }
+            },
+            "violations": []
+          }
+        }
+      ],
+      "final_coverage_check": {
+        "tainted_total": 1,
+        "tainted_revoked": 0,
+        "all_tainted_revoked_before_deadline": false,
+        "coverage_weight": 0,
+        "total_coverage_weight": 10,
+        "rows": [
+          {
+            "credential_id": "k-lone",
+            "display_name": "lone-key",
+            "tenant": "tenant-eta",
+            "generation": "g1",
+            "risk_weight": 10,
+            "revoked": false,
+            "propagation_path": [
+              "k-lone"
+            ]
+          }
+        ],
+        "continuity_compliant": true,
+        "violations": []
+      },
+      "search_stats": {
+        "reachable_states": 1,
+        "transitions_attempted": 3,
+        "visited_executed_sets": 1
+      },
+      "infeasibility_evidence": {
+        "best_reachable_state": {
+          "action_id_sequence": [],
+          "total_risk_cost": 0,
+          "revoked": [],
+          "state_snapshot": {
+            "step": 0,
+            "revoked": [],
+            "services": {
+              "svc-e": {
+                "tenant": "tenant-eta",
+                "roles": {
+                  "admin": {
+                    "active_bindings": [
+                      "k-lone"
+                    ],
+                    "revoked_bindings": [],
+                    "min_active": 1,
+                    "sensitive": true,
+                    "satisfied": true
+                  }
+                },
+                "custody_isolation_ok": true
+              }
+            },
+            "violations": []
+          }
+        },
+        "revocation_risk_coverage": {
+          "covered_weight": 0,
+          "total_weight": 10,
+          "gap_weight": 10,
+          "tainted_remaining": [
+            "k-lone"
+          ]
+        },
+        "next_step_blockers": [
+          {
+            "action_id": "G01",
+            "code": "E2009",
+            "reason": "执行步 1 不在动作配置步区间 [2, 3]",
+            "detail": {
+              "step": 1,
+              "window_from_step": 2,
+              "window_to_step": 3
+            }
+          },
+          {
+            "action_id": "G02",
+            "code": "E2004",
+            "reason": "撤销 k-lone 破坏连续性: 服务 svc-e 角色 admin 活跃 0 < 最低 1",
+            "detail": {
+              "role": "admin",
+              "active": [],
+              "min_active": 1,
+              "revoked_in_binding": [
+                "k-lone"
+              ]
+            }
+          },
+          {
+            "action_id": "G03",
+            "code": "E2010",
+            "reason": "替代凭据 r-late 在步 1 不可用，其可用区间 [3, 6]",
+            "detail": {
+              "step": 1,
+              "replacement_id": "r-late",
+              "available_from_step": 3,
+              "available_to_step": 6
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
