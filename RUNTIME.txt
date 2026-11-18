@@ -1,0 +1,1 @@
+Windows, Python 3.12, CPU. See task/PROMPT.txt.
